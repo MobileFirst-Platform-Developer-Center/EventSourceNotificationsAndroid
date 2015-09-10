@@ -16,8 +16,9 @@
 package com.sample.eventsourcenotificationsandroid;
 
 import java.util.HashMap;
-import java.util.Map;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.util.Log;
 
 import com.worklight.wlclient.api.WLFailResponse;
@@ -25,8 +26,12 @@ import com.worklight.wlclient.api.WLResponse;
 import com.worklight.wlclient.api.challengehandler.ChallengeHandler;
 
 public class EventSourceChallengeHandler extends ChallengeHandler {
-	public EventSourceChallengeHandler(String realm, EventSourceNotificationsAndroid act) {
+	private Activity parentActivity;
+	private WLResponse cachedResponse; 
+	
+	public EventSourceChallengeHandler(String realm, MainActivity activity) {
 		super(realm);
+		parentActivity = activity;
 	}
 
 	@Override
@@ -39,14 +44,20 @@ public class EventSourceChallengeHandler extends ChallengeHandler {
 		return true;
 	}
 
+	
 	@Override
-	public void handleChallenge(WLResponse response) {
+	public void handleChallenge(WLResponse response){
 		Log.d("handleChallenge", "handleChallenge called");
-		Map<String, String> params = new HashMap<String, String>();
-		params.put("j_username", "mobilefirst");
-		params.put("j_password", "password");
-		submitLoginForm("j_security_check", params, null, 0, "post");
+		if (!isCustomResponse(response)) {
+			submitSuccess(response);
+		} else {
+			cachedResponse = response;
+			Intent login = new Intent(parentActivity, LoginActivity.class);
+			parentActivity.startActivityForResult(login, 1);
+		}
+		
 	}
+	
 	
 	public void onSuccess(WLResponse response) {
 		Log.d("ChallengeHandler onSuccess", "onSuccess called");
@@ -56,7 +67,6 @@ public class EventSourceChallengeHandler extends ChallengeHandler {
 		}
 		else{
 			Log.d("ChallengeHandler onSuccess", "submitSuccess");
-//			mainActivity.showLoginForm(View.GONE);
 			submitSuccess(response);
 		}
 	}
@@ -64,4 +74,15 @@ public class EventSourceChallengeHandler extends ChallengeHandler {
 	public void onFailure(WLFailResponse response) {
 		Log.d("ChallengeHandler onFailure", "onFailure called");
 	}	
+	
+	public void submitLogin(int resultCode, String userName, String password, boolean back){
+		if (resultCode != Activity.RESULT_OK || back) {
+			submitFailure(cachedResponse);
+		} else {
+			HashMap<String, String> params = new HashMap<String, String>();
+			params.put("j_username", userName);
+			params.put("j_password", password);
+			submitLoginForm("/j_security_check", params, null, 0, "post");
+		}
+	}
 }

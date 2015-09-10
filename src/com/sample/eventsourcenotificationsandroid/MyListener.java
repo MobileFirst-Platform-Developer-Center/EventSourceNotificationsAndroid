@@ -15,6 +15,11 @@
 */
 package com.sample.eventsourcenotificationsandroid;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.util.Log;
+
 import com.worklight.wlclient.api.WLClient;
 import com.worklight.wlclient.api.WLEventSourceListener;
 import com.worklight.wlclient.api.WLFailResponse;
@@ -51,28 +56,28 @@ public class MyListener implements WLOnReadyToSubscribeListener, WLResponseListe
 		/* Register the event source callback for the alias of myAndroid. 
 		 * This must be performed before we can subscribe or unsubscribe on an alias 
 		 */
-		WLClient.getInstance().getPush().registerEventSourceCallback("myAndroid", "PushAdapter","PushEventSource", this );
+		WLClient.getInstance().getPush().registerEventSourceCallback("myAndroid", "PushAdapter","PushEventSource", this);
 		
-		EventSourceNotificationsAndroid.updateTextView("Ready to subscribe");
-		EventSourceNotificationsAndroid.enableSubscribeButtons();
+		MainActivity.alertMsg("Push Notifications", "Ready to subscribe");
+		MainActivity.enableSubscribeButtons();
 	}
 
 	/* onFailure - Update the UI with the error message 
 	 * 
 	 */
 	@Override
-	public void onFailure(WLFailResponse arg0) {
+	public void onFailure(WLFailResponse response) {
 		switch (mode){
 		case MODE_CONNECT:
-			EventSourceNotificationsAndroid.updateTextView("Unable to connect : " + arg0.getErrorMsg());
+			MainActivity.alertMsg("Connection Failure", response.getErrorMsg());
 			break;
 		
 		case MODE_SUBSCRIBE:
-			EventSourceNotificationsAndroid.updateTextView("Failure to subscribe : " + arg0.getErrorMsg());
+			MainActivity.alertMsg("Failed to subscribe", response.getErrorMsg());
 			break;
 			
 		case MODE_UNSUBSCRIBE:
-			EventSourceNotificationsAndroid.updateTextView("Failure to unsubscribe : " + arg0.getErrorMsg());
+			MainActivity.alertMsg("Failed to unsubscribe", response.getErrorMsg());
 			break;
 			
 		}
@@ -80,18 +85,18 @@ public class MyListener implements WLOnReadyToSubscribeListener, WLResponseListe
 
 	
 	@Override
-	public void onSuccess(WLResponse arg0) {
+	public void onSuccess(WLResponse response) {
 		switch (mode){
 		case MODE_CONNECT:
-			EventSourceNotificationsAndroid.updateTextView("Connected successfully ");
+			Log.i("Push Notifications", "Connected Successfully");
 			break;
 		
 		case MODE_SUBSCRIBE:
-			EventSourceNotificationsAndroid.updateTextView("Subscribed successfully to push notifications");
+			MainActivity.alertMsg("Push Notifications", "Subscribed successfully");
 			break;
 			
 		case MODE_UNSUBSCRIBE:
-			EventSourceNotificationsAndroid.updateTextView("Unsubscribed successfully from push notifications");
+			MainActivity.alertMsg("Push Notifications", "Unsubscribed successfully");
 			break;
 			
 		}				
@@ -99,8 +104,19 @@ public class MyListener implements WLOnReadyToSubscribeListener, WLResponseListe
 
 	/* Update the UI with the notification received */
 	@Override
-	public void onReceive(String arg0, String arg1) {
-		EventSourceNotificationsAndroid.updateTextView("Notification received  " + arg0);	
+	public void onReceive(String props, String payload) {
+		Log.i("Notification", props);
+        JSONObject jsonObject;
+        String notification = "";
+		try {
+			jsonObject = new JSONObject(props);
+			notification = jsonObject.getString("alert");
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+		MainActivity.alertMsg("Notification", notification);
 	}
 
 }
